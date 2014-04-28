@@ -1,10 +1,24 @@
-// YOUR CODE HERE:
-
 var app = {};
 
 (function() {
+  var parseQueryString = function(queryString) {
+    var result = {};
+    _.each(queryString.slice(1).split('&'), function(kvString) {
+      var key = kvString.split('=')[0];
+      var value = kvString.split('=')[1];
+      result[key] = value;
+    });
+    return result;
+  };
+
   app.init = function() {
-    setInterval(app.fetch, 100);
+    app.fetch();
+    setInterval(app.fetch, 1000);
+    app.username = parseQueryString(window.location.search).username;
+    $('.send').on('click', function(event) {
+      event.preventDefault();
+      app.handleSubmit();
+    });
   };
 
   app.send = function(message) {
@@ -28,7 +42,9 @@ var app = {};
       app.fetch.inProgress = true;
       $.ajax(app.server, {
         type: 'GET',
-        //data: JSON.stringify(message),
+        data: {
+          order: "-createdAt"
+        },
         contentType: 'application/json',
         success: function (data) {
           app.fetch.inProgress = false;
@@ -45,6 +61,18 @@ var app = {};
     }
   };
   app.fetch.inProgress = false;
+
+  app.handleSubmit = function() {
+    var $input = $('#message');
+    var message = {
+      username: app.username,
+      text: $input.val(),
+      roomname: 'best_room_ever'
+    };
+    app.send(message);
+    $input.val('');
+    $input.focus();
+  };
 
   app.clearMessages = function() {
     $('#chats').empty();
