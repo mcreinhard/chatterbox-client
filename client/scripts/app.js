@@ -1,6 +1,8 @@
 var app = {};
 
 (function() {
+  // parses window.location.search to extract username
+  // returns an object {username: "actual_name"}
   var parseQueryString = function(queryString) {
     var result = {};
     _.each(queryString.slice(1).split('&'), function(kvString) {
@@ -11,29 +13,55 @@ var app = {};
     return result;
   };
 
+  // initializes this app in index.html
   app.init = function() {
     app.fetch();
     setInterval(app.fetch, 1000);
     app.username = parseQueryString(window.location.search).username;
-    app.roomname = undefined;
-    app.friends = {};
+    app.roomname = undefined; // start off in a nameless room
+    app.friends = {}; // {"friend name": true}
     $('.currentRoom').text(app.roomname || 'all messages');
 
-
+    // listener on send message button - sends message in input
     $('.send').on('click', function(event) {
       event.preventDefault();
       app.handleSubmit();
     });
+
+    // listener on create room button - creates room in input
+    $('.createRoom').on('click', function(event) {
+      event.preventDefault();
+      var $roomSelect = $('#roomSelect');
+      var $input = $('#newRoom');
+      var newRoomName = $input.val();
+      $input.val('');
+      $('#message').focus(); // shifts focus back to chat input
+      $('.currentRoom').text(newRoomName);
+      app.roomname = newRoomName;
+      if (!_.some($roomSelect.children(), function(item) {
+        return $(item).text() === (newRoomName);
+      })) {
+        console.log('new room!');
+        var $roomname = $('<a href="#" class="roomname"></a>');
+        $roomname.text(newRoomName);
+        $roomSelect.append($roomname);
+        $roomSelect.append($('<br>'));
+      }
+    });
+
+    // listener on room selection anchors - changes rooms
     $('#roomSelect').on('click', '.roomname', function(event) {
       event.preventDefault();
       if ($(this).hasClass('showAll')) {
-        app.roomname = undefined;
+        app.roomname = undefined; // nameless room shows all messages
       } else {
         app.roomname = $(this).text();
       }
       $('.currentRoom').text(app.roomname || 'all messages');
       app.fetch();
     });
+
+    // listener on username anchors - toggles friend (bold font)
     $('#chats').on('click', '.username', function(event) {
       event.preventDefault();
       var username = $(this).text();
@@ -42,12 +70,16 @@ var app = {};
       } else {
         delete app.friends[username];
       }
+
+      // filters current messages to add class friend to friends
+      // (bold font)
       $('.message').filter(function() {
         return $(this).children('.username').text() === username;
       }).toggleClass('friend');
     });
   };
 
+  // posts provided message ({username, text, roomname})
   app.send = function(message) {
     $.ajax({
       url: app.server,
@@ -63,9 +95,10 @@ var app = {};
     });
   };
 
-
+  // retrieves and displays 100 latest messages
+  // transits message to app.addRoom to add new rooms to room list
   app.fetch = function() {
-    if (!app.fetch.inProgress) {
+    if (!app.fetch.inProgress) { // guard in case last fetch unresolved
       app.fetch.inProgress = true;
       $.ajax(app.server, {
         type: 'GET',
@@ -79,6 +112,7 @@ var app = {};
         success: function (data) {
           app.fetch.inProgress = false;
           $('#chats').empty();
+          $('#chats').append('<br>');
           _.each(data.results, function(result) {
             app.addMessage(result);
             app.addRoom(result);
@@ -93,6 +127,7 @@ var app = {};
   };
   app.fetch.inProgress = false;
 
+  // takes text from input and transmits message {} to app.send
   app.handleSubmit = function() {
     var $input = $('#message');
     var message = {
@@ -105,10 +140,13 @@ var app = {};
     $input.focus();
   };
 
+  // clears chat for repopulation
   app.clearMessages = function() {
     $('#chats').empty();
   };
 
+  // appends usernames and messages to chat window
+  // any usernames in friends list gain friend class (bold font)
   app.addMessage = function(message) {
     var $message = $('<div class="message"></div>');
     var $username = $('<a href="#" class="username"></a>');
@@ -121,6 +159,7 @@ var app = {};
     $('#chats').append($message);
   };
 
+  // adds new rooms to room list
   app.addRoom = function(message) {
     var $roomSelect = $('#roomSelect');
     if (!_.some($roomSelect.children(), function(item) {
