@@ -16,6 +16,7 @@ var app = {};
     setInterval(app.fetch, 1000);
     app.username = parseQueryString(window.location.search).username;
     app.roomname = undefined;
+    app.friends = {};
     $('.currentRoom').text(app.roomname || 'all messages');
 
 
@@ -32,6 +33,18 @@ var app = {};
       }
       $('.currentRoom').text(app.roomname || 'all messages');
       app.fetch();
+    });
+    $('#chats').on('click', '.username', function(event) {
+      event.preventDefault();
+      var username = $(this).text();
+      if (app.friends[username] === undefined) {
+        app.friends[username] = true;
+      } else {
+        delete app.friends[username];
+      }
+      $('.message').filter(function() {
+        return $(this).children('.username').text() === username;
+      }).toggleClass('friend');
     });
   };
 
@@ -97,8 +110,14 @@ var app = {};
   };
 
   app.addMessage = function(message) {
-    var $message = $('<div></div>');
-    $message.text(message.username + ': ' + message.text);
+    var $message = $('<div class="message"></div>');
+    var $username = $('<a href="#" class="username"></a>');
+    $username.text(message.username);
+    if (app.friends[message.username]) {
+      $message.addClass('friend');
+    }
+    $message.text(' ' + message.text);
+    $message.prepend($username);
     $('#chats').append($message);
   };
 
