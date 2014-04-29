@@ -15,9 +15,15 @@ var app = {};
     app.fetch();
     setInterval(app.fetch, 1000);
     app.username = parseQueryString(window.location.search).username;
+    app.roomname = undefined;
     $('.send').on('click', function(event) {
       event.preventDefault();
       app.handleSubmit();
+    });
+    $('#roomSelect').on('click', '.roomname', function(event) {
+      event.preventDefault();
+      app.roomname = $(this).text();
+      app.fetch();
     });
   };
 
@@ -43,7 +49,10 @@ var app = {};
       $.ajax(app.server, {
         type: 'GET',
         data: {
-          order: "-createdAt"
+          order: "-createdAt",
+          where: {
+            roomname: app.roomname
+          }
         },
         contentType: 'application/json',
         success: function (data) {
@@ -51,6 +60,7 @@ var app = {};
           $('#chats').empty();
           _.each(data.results, function(result) {
             app.addMessage(result);
+            app.addRoom(result);
           });
         },
         error: function (data) {
@@ -82,12 +92,19 @@ var app = {};
     var $message = $('<div></div>');
     $message.text(message.username + ': ' + message.text);
     $('#chats').append($message);
-
   };
 
-  app.addRoom = function(roomName) {
-    $('#roomSelect').append('<a href="#">' + roomName + '</a>');
-  } ;
+  app.addRoom = function(message) {
+    var $roomSelect = $('#roomSelect');
+    if (!_.some($roomSelect.children(), function(item) {
+      return $(item).text() === (message.roomname || '');
+    })) {
+      var $roomname = $('<a href="#" class="roomname"></a>');
+      $roomname.text(message.roomname);
+      $roomSelect.append($roomname);
+      $roomSelect.append($('<br>'));
+    }
+  };
 
   app.server = 'https://api.parse.com/1/classes/chatterbox';
 }).call(this);
