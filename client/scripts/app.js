@@ -16,13 +16,21 @@ var app = {};
     setInterval(app.fetch, 1000);
     app.username = parseQueryString(window.location.search).username;
     app.roomname = undefined;
+    $('.currentRoom').text(app.roomname || 'all messages');
+
+
     $('.send').on('click', function(event) {
       event.preventDefault();
       app.handleSubmit();
     });
     $('#roomSelect').on('click', '.roomname', function(event) {
       event.preventDefault();
-      app.roomname = $(this).text();
+      if ($(this).hasClass('showAll')) {
+        app.roomname = undefined;
+      } else {
+        app.roomname = $(this).text();
+      }
+      $('.currentRoom').text(app.roomname || 'all messages');
       app.fetch();
     });
   };
@@ -77,7 +85,7 @@ var app = {};
     var message = {
       username: app.username,
       text: $input.val(),
-      roomname: 'best_room_ever'
+      roomname: app.roomname
     };
     app.send(message);
     $input.val('');

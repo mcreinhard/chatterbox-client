@@ -16,8 +16,11 @@
     <div id="main">
       <input type="text" name="message" id="message"/>
       <button class="send">send</button>
-      <h1>chatterbox</h1>
-      <div id="roomSelect"></div>
+      <h1>chatterbox: <span class="currentRoom"></span></h1>
+      <div id="roomSelect">
+        <a href="#" class="roomname showAll">(show all messages)</a>
+        <br>
+      </div>
       <div id="chats"></div>
     </div>
     <script>
